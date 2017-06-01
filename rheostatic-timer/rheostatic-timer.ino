@@ -13,18 +13,24 @@ const byte pot1 = A0; //Analog pin of POT1
 const byte pot2 = A1; //Analog pin of POT2
 const byte btnIntPin = 3;
 const byte btnDonePin = 2;
+const byte outPin = 8;
 
 //Other vars init here
 volatile int potVals[2]; //Stores the values of each pot in an array
 const byte changeTime = 1; // Time it takes to transition, in hours
+volatile bool timeSet = false;
 
 volatile int rHour;
 volatile int rMin;
 int rEndHour;
+int rHourS;
+int rMinS;
 
-int sHour;
-int sMin;
+volatile int sHour;
+volatile int sMin;
 int sEndHour;
+int sHourS;
+int sMinS;
 
 void dispStartMsg(){ //Runs "startup" sequence
     disp.print("Timer v.1.00");
@@ -55,11 +61,18 @@ void potRead(int vals[]){ //Reads values of each POT and modifies array to have 
 }
 
 void serialPrintTimes(){
-    Serial.print("Hour = ");
+    /*Serial.print("Rise Hour = ");
     Serial.print(rHour);
     Serial.println();
-    Serial.print("Minute = ");
+    Serial.print("Rise Minute = ");
     Serial.print(rMin);
+    Serial.println();
+    Serial.println();*/
+    Serial.print("Set Hour = ");
+    Serial.print(sHour);
+    Serial.println();
+    Serial.print("Set minute = ");
+    Serial.print(sMin);
     Serial.println();
 }
 
@@ -71,6 +84,7 @@ void setup() { //Setup
     pinMode(pot2, INPUT);
     pinMode(btnIntPin, INPUT_PULLUP);
     pinMode(btnDonePin, INPUT_PULLUP);
+    pinMode(outPin, OUTPUT);
 
     attachInterrupt(digitalPinToInterrupt(btnIntPin), changeVals, LOW);
 
@@ -91,6 +105,7 @@ void setup() { //Setup
     }
 
     dispStartMsg(); // "welcome" message
+    changeVals();
     //dispRisePrefix(0); // set default prefixes before any changes have been applied
     Serial.println("startup finished");
 }
@@ -176,26 +191,44 @@ void changeVals(){
             dispSetPrefix(1);
             disp.setCursor(13, 1);
             disp.print(potVals[1]);
+            sHour = 17;
+            sMin = (potVals[1] - 700);
+            serialPrintTimes();
         } else if(potVals[1] == 760){
             dispSetPrefix(1);
             disp.setCursor(13, 1);
             disp.print("800");
+            sHour = 18;
+            sMin = 0;
+            serialPrintTimes();
         } else if(potVals[1] <= 819){
             dispSetPrefix(1);
             disp.setCursor(13, 1);
             disp.print(potVals[1] + 40);
+            sHour = 18;
+            sMin = (potVals[1] - 760);
+            serialPrintTimes;
         } else if(potVals[1] == 820){
             dispSetPrefix(1);
             disp.setCursor(13, 1);
             disp.print("900");
+            sHour = 19;
+            sMin = 0;
+            serialPrintTimes();
         } else if(potVals[1] <= 879){
             dispSetPrefix(1);
             disp.setCursor(13, 1);
             disp.print(potVals[1] + 80);
+            sHour = 19;
+            sMin = (potVals[1] - 820);
+            serialPrintTimes();
         } else if(potVals[1] == 880){
             dispSetPrefix(2);
             disp.setCursor(13, 1);
             disp.print("000");
+            sHour = 20;
+            sMin = 0;
+            serialPrintTimes();
         } else if(potVals[1] <= 939 && potVals[1] > 880){
             int printVal;
             printVal = map(potVals[1], 881, 939, 1, 59);
@@ -211,21 +244,81 @@ void changeVals(){
                 disp.setCursor(14, 1);
                 disp.print(printVal);
             }
+            sHour = 20;
+            sMin = printVal;
+            serialPrintTimes;
         } else if(potVals[1] == 940){
             dispSetPrefix(2);
             disp.setCursor(13, 1);
-            disp.print("100"); // SUNSET functions END HERE
+            disp.print("100");
+            sHour = 21;
+            sMin = 0;
+            serialPrintTimes(); // SUNSET functions END HERE
         }
-        delay(50);
+        //delay(50);
+    }
+    if(digitalRead(btnDonePin) == LOW){
+        timeSet = true;
+    }
+}
+
+void riseStart(){
+    Serial.println("In rise start before while");
+    int fadeProg = 0;
+    DateTime rTime = rtc.now();
+    while(rTime.hour() != rEndHour){
+        DateTime rTime = rtc.now();
+        if(rTime.minute() == 0){
+            fadeProg = 0;
+        } else if(rTime.minute() != 0){
+            fadeProg = map(rTime.minute(), 1, 59, 0, 255);
+            //Serial.println(fadeProg);
+            analogWrite(outPin, fadeProg);
+        }
+    }
+}
+
+void setStart(){
+    Serial.println("In set before while");
+    int fadeProg = 0;
+    DateTime sTime = rtc.now();
+    while(sTime.hour() != sEndHour){
+        DateTime sTime = rtc.now();
+        if(sTime.minute() == 0){
+            fadeProg = 255;
+        } else if(sTime.minute() != 0){
+            fadeProd = map(sTime.minute(), 1, 59, 255, 0);
+            analogWrite(outPin, fadeProg);
+        }
     }
 }
 
 void loop() { //Loops for duration of program uptime
-    
+    if(timeSet == true){
+        disp.clear();
+        disp.setCursor(0, 0);
+        disp.print("Time set...");
+        delay(1500);
+        disp.clear();
+        timeSet = false;
+    }
+
+    rHourS = rHour;
+    rMinS = rMin;
+    sHourS = sHour;
+    sMinS = sMin;
+
     DateTime cTime = rtc.now();
-    rEndHour = rHour + changeTime;
-    
-    
-    
+    rEndHour = (rHourS + changeTime);
+    sEndHour = (sHourS + changeTime);
+
+    if(cTime.hour() == rHourS && cTime.minute() == rMinS){
+        Serial.println("Rise Start if has been entered");
+        riseStart();
+        Serial.println("This is after rise start in the if function");
+    } else if(cTime.hour() == sHourS && cTime.minute() == sMinS){
+        setStart();
+    }
+
     delay(50);
 }
