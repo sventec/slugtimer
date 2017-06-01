@@ -1,5 +1,9 @@
 // 6.1.17
 
+// TO-DO
+// Remove rHourS, rMinS, sHourS, and sMinS variables.
+// Volatile 
+
 #include <LiquidCrystal.h> //LCD Library
 #include <Wire.h> //Wire lib, used for RTC (maybe)
 #include "RTClib.h" //Adafruit RTC library for use with ds3231
