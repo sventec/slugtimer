@@ -1,4 +1,4 @@
-// 6.1.17
+// 6.05.17
 
 // TO-DO
 // Remove rHourS, rMinS, sHourS, and sMinS variables.
@@ -23,6 +23,8 @@ const byte outPin = 8;
 volatile int potVals[2]; //Stores the values of each pot in an array
 const byte changeTime = 1; // Time it takes to transition, in hours
 volatile bool timeSet = false;
+bool lastClear = false;
+
 
 volatile int rHour;
 volatile int rMin;
@@ -115,6 +117,7 @@ void setup() { //Setup
 }
 
 void changeVals(){
+    disp.clear();
     while(digitalRead(btnDonePin) == HIGH){
         potRead(potVals); // read pot values to start
         potVals[0] = map(potVals[0], 0, 1023, 500, 800); // map the pot1 val to a value between 0500 and 0800
@@ -272,13 +275,9 @@ void riseStart(){
     DateTime rTime = rtc.now();
     while(rTime.hour() != rEndHour){
         DateTime rTime = rtc.now();
-        if(rTime.minute() == 0){
-            fadeProg = 0;
-        } else if(rTime.minute() != 0){
-            fadeProg = map(rTime.minute(), 1, 59, 0, 255);
-            //Serial.println(fadeProg);
-            analogWrite(outPin, fadeProg);
-        }
+        fadeProg = map(rTime.minute(), 0, 59, 0, 255);
+        //Serial.println(fadeProg);
+        analogWrite(outPin, fadeProg);
     }
 }
 
@@ -288,12 +287,8 @@ void setStart(){
     DateTime sTime = rtc.now();
     while(sTime.hour() != sEndHour){
         DateTime sTime = rtc.now();
-        if(sTime.minute() == 0){
-            fadeProg = 255;
-        } else if(sTime.minute() != 0){
-            fadeProd = map(sTime.minute(), 1, 59, 255, 0);
-            analogWrite(outPin, fadeProg);
-        }
+        fadeProg = map(sTime.minute(), 0, 59, 255, 0);
+        analogWrite(outPin, fadeProg);
     }
 }
 
@@ -315,7 +310,36 @@ void loop() { //Loops for duration of program uptime
     DateTime cTime = rtc.now();
     rEndHour = (rHourS + changeTime);
     sEndHour = (sHourS + changeTime);
-
+    
+    if(cTime.second() == 0 && lastClear == false){
+        disp.clear();
+        lastClear = true;
+    } if(cTime.second() == 1 && lastClear == true){
+        lastClear = false;
+    }
+    disp.setCursor(0, 0);
+    disp.print(cTime.hour(), DEC);
+    disp.print(":");
+    disp.print(cTime.minute(), DEC);
+    disp.print(":");
+    disp.print(cTime.second(), DEC);
+    disp.setCursor(0, 1);
+    if(cTime.hour() > sEndHour || cTime.hour() < rHourS){
+        disp.print("Rise at: ");
+        disp.print(rHourS);
+        disp.print(":");
+        disp.print(rMinS);
+        disp.print(":0");
+    } else if(cTime.hour() > rEndHour && cTime.hour() < sHourS){
+        disp.print("Set at: ");
+        disp.print(sHourS);
+        disp.print(":");
+        disp.print(sMinS);
+        disp.print(":0");
+    } else{
+        disp.print(rEndHour);
+    }
+    
     if(cTime.hour() == rHourS && cTime.minute() == rMinS){
         Serial.println("Rise Start if has been entered");
         riseStart();
