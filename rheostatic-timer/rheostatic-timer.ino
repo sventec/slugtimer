@@ -269,7 +269,15 @@ void riseStart(){
         Serial.print("In rise start during fade: ");
         Serial.println(dispProg);
         DateTime rTime = rtc.now();
-        fadeProg = map(rTime.minute(), rMinS, 59, 0, 255);
+        int newTIme;
+        if(rMinS != 0){
+            if(rTime.minute() > 0 && rTime.hour() == rHourS){
+                newTime = (rTime.minute() - rMinS);
+            } else if(rTime.minute() >= 0 && rTime.hour() == rEndHour){
+                newTime = (rTime.minute() + (60 - rMinS));
+            }
+        }
+        fadeProg = map(newTime, 0, 59, 0, 255);
         //Serial.println(fadeProg);
         analogWrite(outPin, fadeProg);
         delay(60);
