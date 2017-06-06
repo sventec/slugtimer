@@ -262,27 +262,31 @@ void changeVals(){
 
 void riseStart(){
     Serial.println("In rise start before fade");
-    Serial.println(rEndHour);
+    //Serial.println(rEndHour);
     int fadeProg = 0;
     int dispProg = 0;
     DateTime rTime = rtc.now();
-    while(rTime.hour() != rEndHour || rTime.minute() != rMinS){
+    int rEndMin = (rMinS + 1);
+    int rSecS = 0;
+    while(rTime.minute() != rEndMin || rTime.second() != rSecS){
         Serial.print("In rise start during fade: ");
         Serial.println(dispProg);
         Serial.println(fadeProg);
         rTime = rtc.now();
         int newTime;
-        Serial.println(newTime);
-        if(rMinS != 0){
+                Serial.println(newTime);
+
+        if(rSecS != 0){
             if(rTime.minute() > 0 && rTime.hour() == rHourS){
                 newTime = (rTime.minute() - rMinS);
             } else if(rTime.minute() >= 0 && rTime.hour() == rEndHour){
                 newTime = (rTime.minute() + (60 - rMinS));
             }
         } else{
-            newTime = rTime.minute();
+            newTime = rTime.second();
         }
         fadeProg = map(newTime, 0, 59, 0, 255);
+        //Serial.println(fadZZZeProg);
         analogWrite(outPin, fadeProg);
         delay(60);
         dispProg = map(fadeProg, 0, 255, 0, 100);
@@ -301,18 +305,14 @@ void setStart(){
     DateTime sTime = rtc.now();
     while(sTime.hour() != sEndHour || sTime.minute() != sMinS){
         Serial.println(dispProg);
-        Serial.println(fadeProg);
-        sTime = rtc.now();
+        DateTime sTime = rtc.now();
         int newTime;
-        Serial.println(newTime);
         if(sMinS != 0){
             if(sTime.minute() > 0 && sTime.hour() == sHourS){
-                newTime = (sTime.minute() - sMinS);
+                newTime = (sTime.minute() + (69 - sMinS));
             } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){
-                newTime = (sTime.minute() + (60 - sMinS));
+                newTime = (sTime.minute() + (69 - sMinS));
             }
-        } else{
-            newTime = sTime.minute();
         }
         fadeProg = map(newTime, 0, 59, 255, 0);
         analogWrite(outPin, fadeProg);
@@ -366,6 +366,7 @@ void loop() { //Loops for duration of program uptime
             disp.print(":0");
         } else if(cTime.minute() >= rMinS && cTime.hour() == rHourS){
             //do nothing
+            disp.print("Sun rising");
         } else if(cTime.minute() < rMinS && cTime.hour() == rHourS){
             disp.print("Rise at: ");
             disp.print(rHourS);
@@ -397,6 +398,8 @@ void loop() { //Loops for duration of program uptime
         disp.print("Sunrise has");
         disp.setCursor(0, 1);
         disp.print("Finished");
+        delay(3000);
+        disp.clear();
     } else if(cTime.hour() == sHourS && cTime.minute() == sMinS){
         Serial.println("Set Start if has been entered");
         setStart();
