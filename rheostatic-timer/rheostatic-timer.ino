@@ -67,19 +67,7 @@ void potRead(int vals[]){ //Reads values of each POT and modifies array to have 
 }
 
 void serialPrintTimes(){
-    /*Serial.print("Rise Hour = ");
-    Serial.print(rHour);
-    Serial.println();
-    Serial.print("Rise Minute = ");
-    Serial.print(rMin);
-    Serial.println();
-    Serial.println();*/
-    Serial.print("Set Hour = ");
-    Serial.print(sHour);
-    Serial.println();
-    Serial.print("Set minute = ");
-    Serial.print(sMin);
-    Serial.println();
+    Serial.println("In changeVals");
 }
 
 void setup() { //Setup
@@ -272,11 +260,14 @@ void changeVals(){
 }
 
 void riseStart(){
-    Serial.println("In rise start before while");
+    Serial.println("In rise start before fade");
+    Serial.println(rEndHour);
     int fadeProg = 0;
     int dispProg = 0;
     DateTime rTime = rtc.now();
-    if(rTime.hour() != rEndHour || rTime.minute() != rMinS){
+    while(rTime.hour() != rEndHour || rTime.minute() != rMinS){
+        Serial.print("In rise start during fade: ");
+        Serial.println(dispProg);
         DateTime rTime = rtc.now();
         fadeProg = map(rTime.minute(), rMinS, 59, 0, 255);
         //Serial.println(fadeProg);
@@ -287,12 +278,6 @@ void riseStart(){
         disp.setCursor(0, 0);
         disp.print(dispProg);
         disp.print("%");
-        disp.setCursor(0, 1);
-        disp.print(rTime.hour(), DEC);
-        disp.print(":");
-        disp.print(rTime.minute(), DEC);
-        disp.print(":");
-        disp.print(rTime.second(), DEC);
     }
     analogWrite(outPin, 255);
 }
@@ -302,7 +287,7 @@ void setStart(){
     int fadeProg = 0;
     int dispProg = 0;
     DateTime sTime = rtc.now();
-    if(sTime.hour() != sEndHour || sTime.minute() != sMinS){
+    while(sTime.hour() != sEndHour || sTime.minute() != sMinS){
         DateTime sTime = rtc.now();
         fadeProg = map(sTime.minute(), sMinS, 59, 255, 0);
         analogWrite(outPin, fadeProg);
@@ -311,13 +296,6 @@ void setStart(){
         disp.setCursor(0, 0);
         disp.print(dispProg);
         disp.print("%");
-        disp.setCursor(0, 1);
-        disp.print(sTime.hour(), DEC);
-        disp.print(":");
-        disp.print(sTime.minute(), DEC);
-        disp.print(":");
-        disp.print(s
-                   Time.second(), DEC);
     }
     analogWrite(outPin, 255);
 }
@@ -361,7 +339,15 @@ void loop() { //Loops for duration of program uptime
             disp.print(":");
             disp.print(rMinS);
             disp.print(":0");
-        } else if(cTime.minute() < rMinS || cTime.hour() == rHourS){
+        } else if(cTime.minute() >= rMinS && cTime.hour() == rHourS){
+            //do nothing
+        } else if(cTime.minute() < rMinS && cTime.hour() == rHourS){
+            disp.print("Rise at: ");
+            disp.print(rHourS);
+            disp.print(":");
+            disp.print(rMinS);
+            disp.print(":0");
+        } else if(cTime.hour() < rHourS){
             disp.print("Rise at: ");
             disp.print(rHourS);
             disp.print(":");
