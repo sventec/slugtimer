@@ -379,7 +379,7 @@ void loop() { //Loops for duration of program uptime
             disp.print(rMinS);
             disp.print(":0");
         }
-    } else if(cTime.hour() > rEndHour && cTime.hour() < sHourS){
+    } else if(cTime.hour() >= rEndHour && cTime.hour() < sHourS){
         disp.print("Set at: ");
         disp.print(sHourS);
         disp.print(":");
