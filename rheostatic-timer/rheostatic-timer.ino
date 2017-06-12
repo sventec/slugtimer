@@ -9,34 +9,34 @@
 #include "RTClib.h" //Adafruit RTC library for use with ds3231
 
 //External sensors/interactive devices init here
-LiquidCrystal disp(12, 11, 7, 6, 5, 4); //Creates LCD with specified pins
-RTC_DS3231 rtc;
+LiquidCrystal disp(12, 11, 7, 6, 5, 4); //Creates LCD with specified pins with name disp
+RTC_DS3231 rtc; //Creates new DS3231 RTC with the name rtc
 
 //Pins init here
 const byte pot1 = A0; //Analog pin of POT1
 const byte pot2 = A1; //Analog pin of POT2
-const byte btnIntPin = 3;
-const byte btnDonePin = 2;
-const byte outPin = 9;
+const byte btnIntPin = 3; //Pin of first button
+const byte btnDonePin = 2; //Pin of second button
+const byte outPin = 9; //Pin to output PWM signal to
 
 //Other vars init here
 volatile int potVals[2]; //Stores the values of each pot in an array
-const byte changeTime = 1; // Time it takes to transition, in hours
-volatile bool timeSet = false;
-bool lastClear = false;
+const byte changeTime = 1; //Time it takes to transition, in hours
+volatile bool timeSet = false; //"Time Set" displays on lcd only once per cycle
+bool lastClear = false; //Used to only disp.clear() once per cycle
 
 
-volatile int rHour;
-volatile int rMin;
-int rEndHour;
-int rHourS;
-int rMinS;
+volatile int rHour; //Volatile Rise Hour value
+volatile int rMin; //Volatile Rise Minute value
+int rEndHour; //Rise Ending Hour value to be assigned later in loop
+int rHourS; //Stable Rise Hour
+int rMinS; //Stable Rise Minute
 
-volatile int sHour;
-volatile int sMin;
-int sEndHour;
-int sHourS;
-int sMinS;
+volatile int sHour; //Volatile Set Hour value
+volatile int sMin; //Volatile Set Minute value
+int sEndHour; //Set Ending Hour value to be assigned later in loop
+int sHourS; //Stable Set Hour
+int sMinS; //Stable Set Minute
 
 
 void dispStartMsg(){ //Runs "startup" sequence
@@ -46,42 +46,44 @@ void dispStartMsg(){ //Runs "startup" sequence
     delay(1250);
     disp.clear();
     return;
-}
+} //Creates a "welcome message" to be displayed on startup
 
 void dispRisePrefix(byte prefix){
     disp.setCursor(0, 0);
     disp.print("Rise Start: ");
     disp.print(prefix);
-}
+} //Used in displaying Rise Time while setting it
 
 void dispSetPrefix(byte prefix){
     disp.setCursor(0, 1);
     disp.print("Set Start: ");
     disp.setCursor(12, 1);
     disp.print(prefix);
-}
+} //Used in displaying Set Time while setting it
 
 void potRead(int vals[]){ //Reads values of each POT and modifies array to have current values
     vals[0] = analogRead(pot1);
     vals[1] = analogRead(pot2);
     return;
-}
+} //Function to read Pot values and edit the array they're stored in directly
+//An array is used because functions reference the original array values while editing but create local copies
+//of variables given before editing. If two variables were passed in the values would never be returned withnout additional code
 
 void serialPrintTimes(){
     Serial.println("In changeVals");
-}
+} //Editable to change Serial messsage while in changeVals
 
-void setup() { //Setup
-    disp.begin(16, 2); //Begin LCD
-    Serial.begin(9600);
+void setup() { //Runs once at the beginning of arduino pwr cycle (being turned on/reset)
+    disp.begin(16, 2); //Initialize the "disp" LCD
+    Serial.begin(9600); //Initialze a serial communication with computer
 
-    pinMode(pot1, INPUT);
+    pinMode(pot1, INPUT); //PinModes for each INPUT/OUTPUT being used
     pinMode(pot2, INPUT);
-    pinMode(btnIntPin, INPUT_PULLUP);
-    pinMode(btnDonePin, INPUT_PULLUP);
+    pinMode(btnIntPin, INPUT_PULLUP); //Buttons are read for a pressed LOW signal
+    pinMode(btnDonePin, INPUT_PULLUP); //Hence the built in pullup resistors being used
     pinMode(outPin, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(btnIntPin), changeVals, LOW);
+    attachInterrupt(digitalPinToInterrupt(btnIntPin), changeVals, LOW); //Interrupt on first button that goes to changeVals when btn pressed
 
     if (! rtc.begin()) {
         disp.clear();
@@ -89,7 +91,7 @@ void setup() { //Setup
         disp.setCursor(0, 1);
         disp.print("(617)-454-4641");
         while (1);
-    }
+    } //If the RTC can't start or intervface with arduino, error message is displayed and setup stops
 
     if (rtc.lostPower()) {
         disp.clear();
@@ -97,14 +99,14 @@ void setup() { //Setup
         disp.setCursor(0, 1);
         disp.print("(617)-454-4641");
         while(1);
-    }
+    } //IF the RTC lost power and doesn't remember the time error message is displayed and setup stops
 
-    rtc.adjust(DateTime(2017, 6, 5, 6, 29, 30));
+    rtc.adjust(DateTime(2017, 6, 5, 6, 29, 30)); //USED FOR TESTING ONLY sets an inaccurate time on the rtc in format of (Y, M, D, Hour, Min, Sec)
 
-    dispStartMsg(); // "welcome" message
-    changeVals();
-    //dispRisePrefix(0); // set default prefixes before any changes have been applied
-    Serial.println("startup finished");
+    dispStartMsg(); //Runs welcome message
+    changeVals(); //Enters changeVals to initially declare rHour, rMin, sHour, sMin
+    //dispRisePrefix(0); // set default prefixes before any changes have been applied --NOT NEEDED?
+    Serial.println("startup finished"); //End of setup
 }
 
 void changeVals(){
@@ -258,7 +260,7 @@ void changeVals(){
     if(digitalRead(btnDonePin) == LOW){
         timeSet = true;
     }
-}
+} //Main function to change rhour, rMin, sHour, sMin and display values on LCD "disp"
 
 void riseStart(){
     Serial.println("In rise start before fade");
@@ -325,7 +327,7 @@ void setStart(){
     digitalWrite(outPin, LOW);
 }
 
-void loop() { //Loops for duration of program uptime
+void loop() { //Loops for duration of arduino uptime (as long as another function isn't running)
     if(timeSet == true){
         disp.clear();
         disp.setCursor(0, 0);
@@ -365,7 +367,7 @@ void loop() { //Loops for duration of program uptime
             disp.print(rMinS);
             disp.print(":0");
         } else if(cTime.minute() >= rMinS && cTime.hour() == rHourS){
-            //do nothing
+            //Should be rising while this is true
         } else if(cTime.minute() < rMinS && cTime.hour() == rHourS){
             disp.print("Rise at: ");
             disp.print(rHourS);
@@ -386,6 +388,7 @@ void loop() { //Loops for duration of program uptime
         disp.print(sMinS);
         disp.print(":0");
     } else if(cTime.hour() >= sHourS && cTime.hour() <= sEndHour){
+        //Should be setting while this is true
         disp.print("Setting...");
     } else{
         disp.print("Error w/ disp");
