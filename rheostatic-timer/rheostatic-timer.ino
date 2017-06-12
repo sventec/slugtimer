@@ -299,7 +299,7 @@ void setStart(){
     int fadeProg = 0;
     int dispProg = 0;
     DateTime sTime = rtc.now();
-    while(sTime.hour() != sEndHour || sTime.minute() != sMinS){
+    while(sTime.hour() != sEndHour || sTime.minute() != sMinS){ // Loop runs until ending hour and minute are BOTH reached
         Serial.println(dispProg);
         Serial.println(fadeProg);
         sTime = rtc.now();
@@ -312,7 +312,7 @@ void setStart(){
                 newTime = (sTime.minute() + (60 - sMinS));
             }
         } else{
-            newTime = sTime.minute();
+            newTime = sTime.minute(); // If sMinS is equal to zero then newTime can = the current time w/o adjustments
         }
         fadeProg = map(newTime, 0, 59, 255, 0);
         analogWrite(outPin, fadeProg);
@@ -385,6 +385,8 @@ void loop() { //Loops for duration of program uptime
         disp.print(":");
         disp.print(sMinS);
         disp.print(":0");
+    } else if(cTime.hour() >= sHourS && cTime.hour() <= sEndHour){
+        disp.print("Setting...");
     } else{
         disp.print("Error w/ disp");
     }
@@ -397,6 +399,8 @@ void loop() { //Loops for duration of program uptime
         disp.print("Sunrise has");
         disp.setCursor(0, 1);
         disp.print("Finished");
+        delay(3000);
+        disp.clear();
     } else if(cTime.hour() == sHourS && cTime.minute() == sMinS){
         Serial.println("Set Start if has been entered");
         setStart();
@@ -405,6 +409,8 @@ void loop() { //Loops for duration of program uptime
         disp.print("Sunset has");
         disp.setCursor(0, 1);
         disp.print("Finished");
+        delay(3000);
+        disp.clear();
     }
 
     delay(50);

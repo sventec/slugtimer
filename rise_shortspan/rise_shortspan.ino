@@ -99,7 +99,7 @@ void setup() { //Setup
         while(1);
     }
 
-    rtc.adjust(DateTime(2017, 6, 5, 6, 29, 30));
+    rtc.adjust(DateTime(2017, 6, 5, 18, 59, 0));
 
     dispStartMsg(); // "welcome" message
     changeVals();
@@ -274,7 +274,7 @@ void riseStart(){
         Serial.println(fadeProg);
         rTime = rtc.now();
         int newTime;
-                Serial.println(newTime);
+        Serial.println(newTime);
 
         if(rSecS != 0){
             if(rTime.minute() > 0 && rTime.hour() == rHourS){
@@ -303,19 +303,24 @@ void setStart(){
     int fadeProg = 0;
     int dispProg = 0;
     DateTime sTime = rtc.now();
-    while(sTime.hour() != sEndHour || sTime.minute() != sMinS){
+    int sEndMin = (sMinS + 1);
+    int sSecS = 0;
+    while(sTime.minute() != sEndMin || sTime.second() != sSecS){
         Serial.println(dispProg);
-        DateTime sTime = rtc.now();
+        sTime = rtc.now();
         int newTime;
-        if(sMinS != 0){
+        if(sSecS != 0){
             if(sTime.minute() > 0 && sTime.hour() == sHourS){
                 newTime = (sTime.minute() + (69 - sMinS));
             } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){
                 newTime = (sTime.minute() + (69 - sMinS));
             }
+        } else {
+            newTime = sTime.second();
         }
         fadeProg = map(newTime, 0, 59, 255, 0);
         analogWrite(outPin, fadeProg);
+        delay(60);
         dispProg = map(fadeProg, 255, 0, 0, 100);
         disp.clear();
         disp.setCursor(0, 0);
@@ -386,6 +391,8 @@ void loop() { //Loops for duration of program uptime
         disp.print(":");
         disp.print(sMinS);
         disp.print(":0");
+    } else if(cTime.hour() >= sHourS && cTime.hour() <= sEndHour){
+        disp.print("Setting...");
     } else{
         disp.print("Error w/ disp");
     }
@@ -408,6 +415,8 @@ void loop() { //Loops for duration of program uptime
         disp.print("Sunset has");
         disp.setCursor(0, 1);
         disp.print("Finished");
+        delay(3000);
+        disp.clear();
     }
 
     delay(50);
