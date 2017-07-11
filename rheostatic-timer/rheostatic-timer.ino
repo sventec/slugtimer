@@ -263,12 +263,12 @@ void changeVals(){
 } //Main function to change rhour, rMin, sHour, sMin and display values on LCD "disp"
 
 void riseStart(){
-    Serial.println("In rise start before fade");
+    Serial.println("In rise start before fade"); //Serial prints for debugging..
     Serial.println(rEndHour);
     int fadeProg = 0;
     int dispProg = 0;
     DateTime rTime = rtc.now();
-    while(rTime.hour() != rEndHour || rTime.minute() != rMinS){
+    while(rTime.hour() != rEndHour || rTime.minute() != rMinS){ //These tests listen for the end hour AND the end minute before exiting
         Serial.print("In rise start during fade: ");
         Serial.println(dispProg);
         Serial.println(fadeProg);
@@ -276,7 +276,7 @@ void riseStart(){
         int newTime;
         Serial.println(newTime);
         if(rMinS != 0){
-            if(rTime.minute() > 0 && rTime.hour() == rHourS){
+            if(rTime.minute() > 0 && rTime.hour() == rHourS){ //checking for the correct time
                 newTime = (rTime.minute() - rMinS);
             } else if(rTime.minute() >= 0 && rTime.hour() == rEndHour){
                 newTime = (rTime.minute() + (60 - rMinS));
@@ -367,8 +367,9 @@ void loop() { //Loops for duration of arduino uptime (as long as another functio
             disp.print(rMinS);
             disp.print(":0");
         } else if(cTime.minute() >= rMinS && cTime.hour() == rHourS){
-            //Should be rising while this is true
+            //Should be rising while this is true  TODO ERROR MESSAGE IF IT DOESN'T??
         } else if(cTime.minute() < rMinS && cTime.hour() == rHourS){
+            // When 
             disp.print("Rise at: ");
             disp.print(rHourS);
             disp.print(":");
