@@ -99,8 +99,8 @@ void setup() { //Setup
         while(1);
     }
 
-    rtc.adjust(DateTime(2017, 6, 5, 18, 59, 0));
-
+    rtc.adjust(DateTime(2017, 7, 17, 5, 59, 0));
+    
     dispStartMsg(); // "welcome" message
     changeVals();
     //dispRisePrefix(0); // set default prefixes before any changes have been applied
@@ -311,9 +311,9 @@ void setStart(){
         int newTime;
         if(sSecS != 0){
             if(sTime.minute() > 0 && sTime.hour() == sHourS){
-                newTime = (sTime.minute() + (69 - sMinS));
+                newTime = (sTime.minute() + (60 - sMinS));              //THESE TWO 60'S USED TO BE 69 CHANGE IF BROKEN
             } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){
-                newTime = (sTime.minute() + (69 - sMinS));
+                newTime = (sTime.minute() + (60 - sMinS));
             }
         } else {
             newTime = sTime.second();

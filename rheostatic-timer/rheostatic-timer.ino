@@ -275,8 +275,8 @@ void riseStart(){
         rTime = rtc.now();
         int newTime;
         Serial.println(newTime);
-        if(rMinS != 0){
-            if(rTime.minute() > 0 && rTime.hour() == rHourS){ //checking for the correct time
+        if(rMinS != 0){ //if the loop doesn't exit at the top of the hour, aka the end minute isn't 0
+            if(rTime.minute() > 0 && rTime.hour() == rHourS){ //
                 newTime = (rTime.minute() - rMinS);
             } else if(rTime.minute() >= 0 && rTime.hour() == rEndHour){
                 newTime = (rTime.minute() + (60 - rMinS));
