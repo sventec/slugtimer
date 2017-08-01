@@ -286,7 +286,7 @@ void riseStart(){
             newTime = rTime.second();
         }
         fadeProg = map(newTime, 0, 59, 0, 255);
-        //Serial.println(fadZZZeProg);
+        //Serial.println(fadeProg);
         analogWrite(outPin, fadeProg);
         delay(60);
         dispProg = map(fadeProg, 0, 255, 0, 100);
@@ -297,7 +297,7 @@ void riseStart(){
     }
     digitalWrite(outPin, HIGH);
 }
-
+            //
 void setStart(){
     Serial.println("In set before while");
     int fadeProg = 0;
