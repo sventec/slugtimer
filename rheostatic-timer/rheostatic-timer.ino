@@ -1,8 +1,17 @@
-// 6.05.17
+// 07.18.17
+// Reed Simon
 
 // TO-DO
 // Remove rHourS, rMinS, sHourS, and sMinS variables.
 // Volatile 
+
+
+//common ground + pos rails.. strip-board?
+//. asembly update- 07.20.17 Perfboard 80% soldered
+// TODO 7.20.17 Change the time functions to assign current time instead of preset "testing" time.. change based on compile time, remove that and re-upload?
+// 
+
+
 
 #include <LiquidCrystal.h> //LCD Library
 #include <Wire.h> //Wire lib, used for RTC (maybe)
@@ -66,16 +75,19 @@ void potRead(int vals[]){ //Reads values of each POT and modifies array to have 
     vals[1] = analogRead(pot2);
     return;
 } //Function to read Pot values and edit the array they're stored in directly
+
 //An array is used because functions reference the original array values while editing but create local copies
 //of variables given before editing. If two variables were passed in the values would never be returned withnout additional code
+// 
+
 
 void serialPrintTimes(){
-    Serial.println("In changeVals");
+    //Serial.println("In changeVals");
 } //Editable to change Serial messsage while in changeVals
 
 void setup() { //Runs once at the beginning of arduino pwr cycle (being turned on/reset)
     disp.begin(16, 2); //Initialize the "disp" LCD
-    Serial.begin(9600); //Initialze a serial communication with computer
+    //Serial.begin(9600); //Initialze a serial communication with computer
 
     pinMode(pot1, INPUT); //PinModes for each INPUT/OUTPUT being used
     pinMode(pot2, INPUT);
@@ -100,13 +112,18 @@ void setup() { //Runs once at the beginning of arduino pwr cycle (being turned o
         disp.print("(617)-454-4641");
         while(1);
     } //IF the RTC lost power and doesn't remember the time error message is displayed and setup stops
+    
+    
+    //IF THE TIME EVER STOPS UPDATING USE THIS LINE
+    
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    //rtc.adjust(DateTime(2017, 6, 5, 5, 59, 0)); //USED FOR TESTING ONLY sets an inaccurate time on the rtc in format of (Y, M, D, Hour, Min, Sec)
 
-    rtc.adjust(DateTime(2017, 6, 5, 6, 29, 30)); //USED FOR TESTING ONLY sets an inaccurate time on the rtc in format of (Y, M, D, Hour, Min, Sec)
-
+    
     dispStartMsg(); //Runs welcome message
     changeVals(); //Enters changeVals to initially declare rHour, rMin, sHour, sMin
-    //dispRisePrefix(0); // set default prefixes before any changes have been applied --NOT NEEDED?
-    Serial.println("startup finished"); //End of setup
+    //dispRisePrefix(0); // set default prefixes before any changes have been applied --NOT NEEDED
+    //Serial.println("startup finished"); //End of setup
 }
 
 void changeVals(){
@@ -263,18 +280,18 @@ void changeVals(){
 } //Main function to change rhour, rMin, sHour, sMin and display values on LCD "disp"
 
 void riseStart(){
-    Serial.println("In rise start before fade"); //Serial prints for debugging..
-    Serial.println(rEndHour);
+    //Serial.println("In rise start before fade"); //Serial prints for debugging..
+    //Serial.println(rEndHour);
     int fadeProg = 0;
     int dispProg = 0;
     DateTime rTime = rtc.now();
     while(rTime.hour() != rEndHour || rTime.minute() != rMinS){ //These tests listen for the end hour AND the end minute before exiting
-        Serial.print("In rise start during fade: ");
-        Serial.println(dispProg);
-        Serial.println(fadeProg);
+        //Serial.print("In rise start during fade: ");
+        //Serial.println(dispProg);
+        //Serial.println(fadeProg);
         rTime = rtc.now();
         int newTime;
-        Serial.println(newTime);
+        //Serial.println(newTime);
         if(rMinS != 0){ //if the loop doesn't exit at the top of the hour, aka the end minute isn't 0
             if(rTime.minute() > 0 && rTime.hour() == rHourS){ //
                 newTime = (rTime.minute() - rMinS);
@@ -297,20 +314,20 @@ void riseStart(){
 }
 
 void setStart(){
-    Serial.println("In set before while");
+    //Serial.println("In set before while");
     int fadeProg = 0;
     int dispProg = 0;
     DateTime sTime = rtc.now();
     while(sTime.hour() != sEndHour || sTime.minute() != sMinS){ // Loop runs until ending hour and minute are BOTH reached
-        Serial.println(dispProg);
-        Serial.println(fadeProg);
+        //Serial.println(dispProg);
+        //Serial.println(fadeProg);
         sTime = rtc.now();
         int newTime;
-        Serial.println(newTime);
+        //Serial.println(newTime);
         if(sMinS != 0){
             if(sTime.minute() > 0 && sTime.hour() == sHourS){
                 newTime = (sTime.minute() - sMinS);
-            } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){
+            } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){ //Keep in mind the restrictions of using this formula fo r
                 newTime = (sTime.minute() + (60 - sMinS));
             }
         } else{
@@ -383,22 +400,29 @@ void loop() { //Loops for duration of arduino uptime (as long as another functio
             disp.print(":0");
         }
     } else if(cTime.hour() >= rEndHour && cTime.hour() < sHourS){
+        digitalWrite(outPin, HIGH);
         disp.print("Set at: ");
         disp.print(sHourS);
         disp.print(":");
         disp.print(sMinS);
         disp.print(":0");
-    } else if(cTime.hour() >= sHourS && cTime.hour() <= sEndHour){
+    } else if(cTime.hour() >= sHourS && cTime.hour() < sEndHour){
         //Should be setting while this is true
-        disp.print("Setting...");
+        disp.print("Setting..."); // If this is ever displayed something is wrong, should have a percent the entire time the sun is setting
+    } else if(cTime.hour() == sEndHour && cTime.minute() > sMinS){ //Added this 07.18.17, not tested.. make sure doesn't conflict with another rise/set statement
+        disp.print("Rise at: ");
+        disp.print(rHourS);
+        disp.print(":");
+        disp.print(rMinS);
+        disp.print(":0");
     } else{
         disp.print("Error w/ disp");
     }
 
     if(cTime.hour() == rHourS && cTime.minute() == rMinS){
-        Serial.println("Rise Start if has been entered");
+        //Serial.println("Rise Start if has been entered");
         riseStart();
-        Serial.println("This is after rise start in the if function");
+        //Serial.println("This is after rise start in the if function");
         disp.clear();
         disp.print("Sunrise has");
         disp.setCursor(0, 1);
@@ -406,9 +430,9 @@ void loop() { //Loops for duration of arduino uptime (as long as another functio
         delay(3000);
         disp.clear();
     } else if(cTime.hour() == sHourS && cTime.minute() == sMinS){
-        Serial.println("Set Start if has been entered");
+        //Serial.println("Set Start if has been entered");
         setStart();
-        Serial.println("This is after set start in the if function");
+        //Serial.println("This is after set start in the if function");
         disp.clear();
         disp.print("Sunset has");
         disp.setCursor(0, 1);
