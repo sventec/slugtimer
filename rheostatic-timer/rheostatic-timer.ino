@@ -34,19 +34,26 @@ const byte changeTime = 1; //Time it takes to transition, in hours
 volatile bool timeSet = false; //"Time Set" displays on lcd only once per cycle
 bool lastClear = false; //Used to only disp.clear() once per cycle
 
-
+//Rising Time Vars
 volatile int rHour; //Volatile Rise Hour value
 volatile int rMin; //Volatile Rise Minute value
 int rEndHour; //Rise Ending Hour value to be assigned later in loop
 int rHourS; //Stable Rise Hour
 int rMinS; //Stable Rise Minute
 
+//Setting Time Vars
 volatile int sHour; //Volatile Set Hour value
 volatile int sMin; //Volatile Set Minute value
 int sEndHour; //Set Ending Hour value to be assigned later in loop
 int sHourS; //Stable Set Hour
 int sMinS; //Stable Set Minute
 
+//Inactive Time Check Vars
+DateTime inactiveTime;
+DateTime checkTime;
+bool isInactive = false;
+
+volatile bool pseudoEnter = false;
 
 void dispStartMsg(){ //Runs "startup" sequence
     disp.print("Timer v.1.00");
@@ -77,17 +84,30 @@ void potRead(int vals[]){ //Reads values of each POT and modifies array to have 
 } //Function to read Pot values and edit the array they're stored in directly
 
 //An array is used because functions reference the original array values while editing but create local copies
-//of variables given before editing. If two variables were passed in the values would never be returned withnout additional code
-// 
-
+//of variables given before editing. If two variables were passed in the values would never be returned withnout additional code 
 
 void serialPrintTimes(){
-    //Serial.println("In changeVals");
-} //Editable to change Serial messsage while in changeVals
+    checkTime = rtc.now();
+    
+    if(inactiveTime.second() < 30){
+        if((inactiveTime.second() + 30) == checkTime.second()){
+            isInactive = true;
+        }
+    } else if(inactiveTime.second() == 30){
+        if(checkTime.second() == 0){
+            isInactive = true;
+        }
+    } else if(inactiveTime.second() > 30){
+        if((inactiveTime.second() - 30) == checkTime.second()){
+            isInactive = true;
+        }
+    } else{}
+
+} //Misleading Name
 
 void setup() { //Runs once at the beginning of arduino pwr cycle (being turned on/reset)
     disp.begin(16, 2); //Initialize the "disp" LCD
-    //Serial.begin(9600); //Initialze a serial communication with computer
+    Serial.begin(9600); //Initialze a serial communication with computer
 
     pinMode(pot1, INPUT); //PinModes for each INPUT/OUTPUT being used
     pinMode(pot2, INPUT);
@@ -95,7 +115,7 @@ void setup() { //Runs once at the beginning of arduino pwr cycle (being turned o
     pinMode(btnDonePin, INPUT_PULLUP); //Hence the built in pullup resistors being used
     pinMode(outPin, OUTPUT);
 
-    attachInterrupt(digitalPinToInterrupt(btnIntPin), changeVals, LOW); //Interrupt on first button that goes to changeVals when btn pressed
+    attachInterrupt(digitalPinToInterrupt(btnIntPin), pseudoVals, LOW); //Interrupt on first button that goes to changeVals when btn pressed
 
     if (! rtc.begin()) {
         disp.clear();
@@ -117,7 +137,7 @@ void setup() { //Runs once at the beginning of arduino pwr cycle (being turned o
     //IF THE TIME EVER STOPS UPDATING USE THIS LINE
     
     //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    //rtc.adjust(DateTime(2017, 6, 5, 5, 59, 0)); //USED FOR TESTING ONLY sets an inaccurate time on the rtc in format of (Y, M, D, Hour, Min, Sec)
+    //rtc.adjust(DateTime(2017, 6, 5, 23, 59, 0)); //USED FOR TESTING ONLY sets an inaccurate time on the rtc in format of (Y, M, D, Hour, Min, Sec)
 
     
     dispStartMsg(); //Runs welcome message
@@ -126,9 +146,14 @@ void setup() { //Runs once at the beginning of arduino pwr cycle (being turned o
     //Serial.println("startup finished"); //End of setup
 }
 
+void pseudoVals(){
+    pseudoEnter = true;
+} //Used to avoid long pieces of code in the interrupt
+
 void changeVals(){
     disp.clear();
-    while(digitalRead(btnDonePin) == HIGH){
+    inactiveTime = rtc.now();
+    while(digitalRead(btnDonePin) == HIGH && isInactive == false){
         potRead(potVals); // read pot values to start
         potVals[0] = map(potVals[0], 0, 1023, 500, 800); // map the pot1 val to a value between 0500 and 0800
         if(potVals[0] <= 559){ // SUNRISE FUNCTIONS GO HERE.. start
@@ -274,8 +299,9 @@ void changeVals(){
         }
         //delay(50);
     }
-    if(digitalRead(btnDonePin) == LOW){
+    if(digitalRead(btnDonePin) == LOW || isInactive == true){
         timeSet = true;
+        
     }
 } //Main function to change rhour, rMin, sHour, sMin and display values on LCD "disp"
 
@@ -327,7 +353,7 @@ void setStart(){
         if(sMinS != 0){
             if(sTime.minute() > 0 && sTime.hour() == sHourS){
                 newTime = (sTime.minute() - sMinS);
-            } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){ //Keep in mind the restrictions of using this formula fo r
+            } else if(sTime.minute() >= 0 && sTime.hour() == sEndHour){
                 newTime = (sTime.minute() + (60 - sMinS));
             }
         } else{
@@ -345,12 +371,19 @@ void setStart(){
 }
 
 void loop() { //Loops for duration of arduino uptime (as long as another function isn't running)
+    
+    if(pseudoEnter == true){
+        changeVals();
+        pseudoEnter = false;
+    }
+    
     if(timeSet == true){
         disp.clear();
         disp.setCursor(0, 0);
         disp.print("Time set...");
         delay(1500);
         disp.clear();
+        isInactive = false;
         timeSet = false;
     }
 
