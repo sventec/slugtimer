@@ -1,25 +1,17 @@
-// 07.18.17
-// Reed Simon
+// 08.07.2017
+// v2.01
+// Intellectual Property of Reed Simon
 
-// TO-DO
-// Remove rHourS, rMinS, sHourS, and sMinS variables.
-// Volatile 
-
-
-//common ground + pos rails.. strip-board?
-//. asembly update- 07.20.17 Perfboard 80% soldered
-// TODO 7.20.17 Change the time functions to assign current time instead of preset "testing" time.. change based on compile time, remove that and re-upload?
-// 
+//
 
 
-
-#include <LiquidCrystal.h> //LCD Library
-#include <Wire.h> //Wire lib, used for RTC (maybe)
-#include "RTClib.h" //Adafruit RTC library for use with ds3231
+#include <LiquidCrystal.h>
+#include <Wire.h>
+#include "RTClib.h"
 
 //External sensors/interactive devices init here
-LiquidCrystal disp(12, 11, 7, 6, 5, 4); //Creates LCD with specified pins with name disp
-RTC_DS3231 rtc; //Creates new DS3231 RTC with the name rtc
+LiquidCrystal disp(12, 11, 7, 6, 5, 4);
+RTC_DS3231 rtc;
 
 //Pins init here
 const byte pot1 = A0; //Analog pin of POT1
