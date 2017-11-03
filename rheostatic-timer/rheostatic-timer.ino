@@ -1,6 +1,7 @@
 // 08.07.2017
 // v2.01
-// Intellectual Property of Reed Simon
+// Intellectual Property of Reed Simon, 2017
+// Published under MIT License
 
 //
 
