@@ -1,0 +1,7 @@
+init 05302018
+
+- Create (or at least start) gerber files for project
+- Find a PCB supplier and component source (sources realistically)
+  - IF THIS IS GOING TO BE PRODUCED maybe change pots (and messy pot code) to rotary switch?
+- Fix common ground issue with current prototype (v.2.20) that is breaking changeVals
+- etc
